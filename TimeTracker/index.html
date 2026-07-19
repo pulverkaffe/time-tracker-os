@@ -102,13 +102,6 @@
     background:currentColor;
   }
   .stop-btn:hover{background:#2B3040}
-  .pomo-btn{
-    font-size:13px;font-weight:600;color:var(--text);
-    background:var(--card-2);border-radius:8px;padding:9px 16px;margin-left:8px;
-  }
-  .pomo-btn:hover{background:#2B3040}
-  .pomo-btn.armed{box-shadow:inset 0 0 0 1px var(--energi);color:var(--energi)}
-  .active-time.pomo{color:var(--energi)}
   .idle-hint{font-size:14px;color:var(--dim)}
 
   /* ---------- Category grid ---------- */
@@ -362,18 +355,8 @@ const DEFAULT_STATE = {
   entries: []
 };
 
-const POMO_MS = 25*60*1000;
-let pomoDoneFlag = false;
-let pomoArmed = false;      // tomaten trycktes innan kategori valdes
-let audioCtx = null;
-
 /* Ritade ikoner i appens stil — renderas lika på alla enheter */
 const ICONS = {
-  tomato:'<svg class="icn" viewBox="0 0 24 24" aria-hidden="true">'+
-    '<path fill="#FF6B35" d="M12 7.2c-4.9 0-8.2 3-8.2 7.2 0 4.1 3.7 6.6 8.2 6.6s8.2-2.5 8.2-6.6c0-4.2-3.3-7.2-8.2-7.2Z"/>'+
-    '<path fill="#95E881" d="M11.2 2.8h1.6v4h-1.6z"/>'+
-    '<path fill="#95E881" d="M12 5.2C10.9 6.4 9.3 7 7.4 6.8c1.4 1.3 3 1.8 4.6 1.5 1.6.3 3.2-.2 4.6-1.5-1.9.2-3.5-.4-4.6-1.6Z"/>'+
-    '</svg>',
   x:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
 };
 
@@ -465,7 +448,6 @@ function closeForgotten(){
   if(run && dayKey(run.start) !== dayKey(Date.now())){
     const d = new Date(run.start);
     run.end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59).getTime();
-    state.pomo = null;
     saveState(); render();
     return true;
   }
@@ -488,91 +470,14 @@ function startActivity(catId){
   if(run && run.cat===catId){ stopActivity(); return; }   // samma knapp = stopp
   const now = Date.now();
   if(run) run.end = now;
-  state.pomo = null;
-  pomoDoneFlag = false;
-  const entry = {id:uid(), cat:catId, start:now, end:null};
-  state.entries.push(entry);
-  if(pomoArmed){
-    state.pomo = { entryId: entry.id, endAt: now + POMO_MS };
-    pomoArmed = false;
-  }
+  state.entries.push({id:uid(), cat:catId, start:now, end:null});
   saveState(); render();
 }
 function stopActivity(){
   const run = runningEntry();
-  if(run){ run.end = Date.now(); state.pomo = null; saveState(); render(); }
+  if(run){ run.end = Date.now(); saveState(); render(); }
 }
 
-/* ---------- Pomodoro ---------- */
-function unlockAudio(){
-  // Måste anropas vid ett fingertryck: skapar ljudmotorn, väcker den
-  // och spelar en tyst buffert — det låser upp ljud för senare (iOS-tricket)
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    const buf = audioCtx.createBuffer(1, 1, 22050);
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf; src.connect(audioCtx.destination); src.start(0);
-  }catch(e){}
-}
-function armPomodoro(){
-  // Tomat före kategori: nästa aktivitet startar som pomodoro
-  unlockAudio();
-  pomoArmed = !pomoArmed;
-  pomoDoneFlag = false;
-  render();
-}
-function startPomodoro(){
-  const run = runningEntry();
-  if(!run) return;
-  unlockAudio();
-  state.pomo = { entryId: run.id, endAt: Date.now() + POMO_MS };
-  saveState(); render();
-}
-function cancelPomodoro(){
-  state.pomo = null;          // aktiviteten fortsätter loggas som vanligt
-  saveState(); render();
-}
-function completePomodoro(){
-  const pomo = state.pomo;
-  if(!pomo) return;
-  const entry = state.entries.find(e=>e.id===pomo.entryId);
-  if(entry && entry.end===null) entry.end = pomo.endAt;   // logga exakt 25 min
-  state.pomo = null;
-  pomoDoneFlag = true;
-  playChime();
-  if(navigator.vibrate) navigator.vibrate([200,100,200]);
-  saveState(); render();
-}
-function playChime(){
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const play = ()=>{
-      const notes = [523.25, 659.25, 783.99, 523.25, 659.25, 783.99];   // C5–E5–G5 x2
-      notes.forEach((f,i)=>{
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = 'sine'; o.frequency.value = f;
-        const t = audioCtx.currentTime + i*0.28 + (i>=3 ? 0.5 : 0);
-        g.gain.setValueAtTime(0.001, t);
-        g.gain.exponentialRampToValueAtTime(0.4, t+0.03);
-        g.gain.exponentialRampToValueAtTime(0.001, t+0.9);
-        o.connect(g); g.connect(audioCtx.destination);
-        o.start(t); o.stop(t+1);
-      });
-    };
-    if(audioCtx.state==='suspended'){
-      audioCtx.resume().then(play).catch(()=>{});
-    }else{
-      play();
-    }
-  }catch(e){ console.error('Ljud kunde inte spelas', e); }
-}
-function fmtCountdown(ms){
-  ms = Math.max(0, ms);
-  const s = Math.round(ms/1000);
-  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
-}
 function deleteEntry(id){
   state.entries = state.entries.filter(e=>e.id!==id);
   saveState(); render();
@@ -586,12 +491,10 @@ function renderLogga(){
 
   if(run){
     const c = catById(run.cat);
-    const isPomo = state.pomo && state.pomo.entryId===run.id;
     card.style.setProperty('--accent', c ? c.color : 'var(--neutral)');
-    $('activeLabel').innerHTML = isPomo ? ICONS.tomato+' Pomodoro pågår' : 'Pågår nu';
-    $('activeTime').textContent = isPomo ? fmtCountdown(state.pomo.endAt - Date.now()) : fmtDurClock(entryDur(run));
+    $('activeLabel').textContent = 'Pågår nu';
+    $('activeTime').textContent = fmtDurClock(entryDur(run));
     $('activeTime').classList.remove('idle');
-    $('activeTime').classList.toggle('pomo', isPomo);
     $('activeHint').innerHTML = '';
     const nameEl = document.createElement('div');
     nameEl.className = 'active-name';
@@ -601,37 +504,13 @@ function renderLogga(){
     stopBtn.className = 'stop-btn';
     stopBtn.textContent = 'Stoppa';
     stopBtn.onclick = stopActivity;
-    const pomoBtn = document.createElement('button');
-    pomoBtn.className = 'pomo-btn';
-    if(isPomo){
-      pomoBtn.textContent = 'Avbryt pomodoro';
-      pomoBtn.onclick = cancelPomodoro;
-    }else{
-      pomoBtn.innerHTML = ICONS.tomato+' Pomodoro 25 min';
-      pomoBtn.onclick = startPomodoro;
-    }
-    $('activeHint').append(nameEl, stopBtn, pomoBtn);
+    $('activeHint').append(nameEl, stopBtn);
   }else{
-    const accent = (pomoDoneFlag || pomoArmed) ? 'var(--energi)' : 'var(--neutral)';
-    card.style.setProperty('--accent', accent);
-    $('activeLabel').innerHTML = pomoDoneFlag ? ICONS.tomato+' Pomodoro klar'
-      : pomoArmed ? ICONS.tomato+' Pomodoro redo'
-      : 'Ingen aktivitet pågår';
-    $('activeTime').textContent = (pomoDoneFlag || pomoArmed) ? '25:00' : '0:00';
+    card.style.setProperty('--accent','var(--neutral)');
+    $('activeLabel').textContent = 'Ingen aktivitet pågår';
+    $('activeTime').textContent = '0:00';
     $('activeTime').classList.add('idle');
-    $('activeTime').classList.remove('pomo');
-    $('activeHint').innerHTML = '';
-    const hintText = document.createElement('div');
-    hintText.style.marginBottom = '12px';
-    hintText.textContent = pomoDoneFlag ? 'Bra jobbat — dags för en kort paus.'
-      : pomoArmed ? 'Välj en kategori så startar nedräkningen.'
-      : 'Tryck på det du gör just nu.';
-    const pomoBtn = document.createElement('button');
-    pomoBtn.className = 'pomo-btn' + (pomoArmed ? ' armed' : '');
-    pomoBtn.style.marginLeft = '0';
-    pomoBtn.innerHTML = pomoArmed ? 'Avbryt pomodoro' : ICONS.tomato+' Pomodoro 25 min';
-    pomoBtn.onclick = armPomodoro;
-    $('activeHint').append(hintText, pomoBtn);
+    $('activeHint').textContent = 'Tryck på det du gör just nu.';
   }
 
   // Kategoriknappar med dagens summa
@@ -808,10 +687,6 @@ function carveOut(start, end){
     }
     return parts;
   });
-  // Om en pågående aktivitet påverkades: rensa ev. pomodoro-koppling
-  if(state.pomo && !state.entries.find(e=>e.id===state.pomo.entryId)){
-    state.pomo = null;
-  }
 }
 
 function saveManual(){
@@ -958,40 +833,16 @@ function render(){
 });
 $('gearBtn').onclick = openEditor;
 
-/* Håll ljudmotorn vaken: varje fingertryck i appen väcker den vid behov */
-document.addEventListener('pointerdown', ()=>{
-  if(audioCtx && audioCtx.state==='suspended'){
-    audioCtx.resume().catch(()=>{});
-  }
-}, {passive:true});
-
 /* ---------- Init ---------- */
 (async function init(){
   await loadState();
-  // Städa upp pomodoro-läge efter omladdning
-  if(state.pomo){
-    const entry = state.entries.find(e=>e.id===state.pomo.entryId);
-    if(!entry || entry.end!==null){
-      state.pomo = null;                       // aktiviteten finns inte längre
-    }else if(Date.now() >= state.pomo.endAt){
-      completePomodoro();                      // hann bli klar medan appen var stängd
-    }
-  }
   render();
   closeForgotten();
   setInterval(()=>{
     if(closeForgotten()) return;
-    // Pomodoro blir klar oavsett vilken flik som visas
-    if(state.pomo && Date.now() >= state.pomo.endAt){
-      completePomodoro();
-      return;
-    }
     const run = runningEntry();
     if(run && currentView==='logga'){
-      const isPomo = state.pomo && state.pomo.entryId===run.id;
-      $('activeTime').textContent = isPomo
-        ? fmtCountdown(state.pomo.endAt - Date.now())
-        : fmtDurClock(entryDur(run));
+      $('activeTime').textContent = fmtDurClock(entryDur(run));
     }
   }, 1000);
   tickTimer = setInterval(()=>{
