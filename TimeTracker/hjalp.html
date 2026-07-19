@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Så funkar det — Tidsmätaren</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<meta name="theme-color" content="#12141A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141A;
+    --card:#1B1E26;
+    --text:#F2F3F5;
+    --dim:rgba(242,243,245,.55);
+    --faint:rgba(242,243,245,.28);
+    --energi:#FF6B35;
+    --insikt:#E8C547;
+    --tillit:#4ECDC4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Outfit',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:0 20px calc(28px + env(safe-area-inset-bottom));
+    max-width:560px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+  header{padding:26px 0 22px}
+  .brand{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  h1{font-size:30px;font-weight:900;letter-spacing:-.01em;line-height:1.05;margin-top:4px}
+  .intro{color:var(--dim);font-size:15px;margin:14px 0 26px}
+
+  .step{
+    position:relative;
+    background:var(--card);
+    border-radius:14px;
+    padding:16px 18px 16px 60px;
+    margin-bottom:10px;
+  }
+  .sect-title{font-size:20px;font-weight:900;margin-top:30px}
+  .step .nr{
+    position:absolute;left:18px;top:16px;
+    width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:14px;color:#0E1116;
+    background:var(--c,var(--tillit));
+  }
+  .step h2{font-size:16px;font-weight:800;margin-bottom:3px}
+  .step p{font-size:14px;color:var(--dim)}
+  .step b{color:var(--text);font-weight:700}
+
+  .note{
+    border:1px solid rgba(232,197,71,.35);
+    border-radius:14px;
+    padding:16px 18px;
+    margin:22px 0 26px;
+    font-size:14px;color:var(--dim);
+  }
+  .note b{color:var(--insikt);font-weight:700}
+
+  .cta{
+    display:block;text-align:center;
+    background:var(--tillit);color:#0E1116;
+    font-weight:800;font-size:16px;
+    padding:15px;border-radius:12px;
+    text-decoration:none;
+  }
+  .cta:active{transform:scale(.99)}
+
+  .footer{color:var(--faint);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:26px 0 4px}
+  a.plain{color:inherit;text-decoration:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Monkey Mindset</div>
+  <h1>Så funkar Tidsmätaren</h1>
+</header>
+
+<p class="intro">Under en vecka mäter du var din tid faktiskt tar vägen. Inte var du tror att den tar vägen — var den tar vägen. Så här gör du:</p>
+
+<div class="step" style="--c:#FF6B35">
+  <span class="nr">1</span>
+  <h2>Tryck på det du gör</h2>
+  <p>Klockan startar direkt. Möte? Tryck <b>Möten</b>. Mejl? Tryck <b>Mejl &amp; admin</b>.</p>
+</div>
+
+<div class="step" style="--c:#E8C547">
+  <span class="nr">2</span>
+  <h2>Byt aktivitet med ett tryck</h2>
+  <p>Tryck på nästa kategori när du byter — den förra stoppas automatiskt. Glömde du logga något? Använd <b>Lägg till i efterhand</b>.</p>
+</div>
+
+<div class="step" style="--c:#4ECDC4">
+  <span class="nr">3</span>
+  <h2>Stoppa när dagen är slut</h2>
+  <p>Tryck <b>Stoppa</b> när du är klar för dagen. Paus mitt på dagen är däremot en egen kategori — den är en del av bilden.</p>
+</div>
+
+<div class="step" style="--c:#95E881">
+  <span class="nr">4</span>
+  <h2>Vill du fokusera? Ta tomaten</h2>
+  <p>Tryck på <b>Pomodoro 25 min</b> så räknar appen ner och säger till med en signal när passet är klart. Håll appen öppen på skärmen så länge.</p>
+</div>
+
+<div class="step" style="--c:#B39DDB">
+  <span class="nr">5</span>
+  <h2>Se din vecka växa fram</h2>
+  <p>Fliken <b>Vecka</b> visar helheten: total tid, tid per kategori och hur dagarna skiljer sig åt. När veckan är slut — tryck <b>Exportera CSV</b> och ta med filen till samtalet.</p>
+</div>
+
+<div class="note"><b>Viktigt:</b> din data sparas i webbläsaren på din telefon. Kör hela veckan i samma webbläsare på samma enhet, och exportera CSV:n som säkerhetskopia.</div>
+
+<h2 class="sect-title">Lägg appen på hemskärmen</h2>
+<p class="intro" style="margin:8px 0 16px">Då får Tidsmätaren en egen ikon och öppnas i helskärm, som en vanlig app.</p>
+
+<div class="step" style="--c:#4ECDC4">
+  <span class="nr">i</span>
+  <h2>iPhone</h2>
+  <p>Öppna sidan i <b>Safari</b> → tryck på <b>Dela-knappen</b> (fyrkanten med pilen uppåt) → skrolla ner och välj <b>Lägg till på hemskärmen</b> → <b>Lägg till</b>.</p>
+</div>
+
+<div class="step" style="--c:#95E881">
+  <span class="nr">A</span>
+  <h2>Android</h2>
+  <p>Öppna sidan i <b>Chrome</b> → tryck på <b>menyn</b> (tre prickar uppe till höger) → välj <b>Lägg till på startskärmen</b> → <b>Lägg till</b>.</p>
+</div>
+
+<a class="cta" href="/">Öppna Tidsmätaren</a>
+
+<div class="footer"><a class="plain" href="https://monkeymindset.se">monkeymindset.se</a></div>
+
+</body>
+</html>
