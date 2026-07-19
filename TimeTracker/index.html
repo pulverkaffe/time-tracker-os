@@ -46,7 +46,9 @@
   header{padding:22px 0 14px;display:flex;align-items:flex-end;justify-content:space-between}
   .brand{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);font-weight:600}
   h1{font-size:30px;font-weight:900;letter-spacing:-.01em;line-height:1.05;margin-top:4px}
-  .gear{font-size:20px;color:var(--dim);padding:8px;line-height:1}
+  .hd-actions{display:flex;gap:4px;align-items:center}
+  .gear{font-size:20px;color:var(--dim);padding:8px;line-height:1;display:block}
+  .gear svg{width:20px;height:20px;display:block}
   .gear:hover{color:var(--text)}
 
   /* ---------- Tabs ---------- */
@@ -235,7 +237,10 @@
     <div class="brand">Monkey Mindset</div>
     <h1>Tidsmätaren</h1>
   </div>
-  <button class="gear" id="gearBtn" aria-label="Redigera kategorier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.03Z"/></svg></button>
+  <div class="hd-actions">
+    <a class="gear" href="hjalp.html" aria-label="Så funkar det"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.7 2.7 0 0 1 5.25.9c0 1.8-2.55 2.1-2.55 3.6"/><line x1="12" y1="16.8" x2="12" y2="16.9"/></svg></a>
+    <button class="gear" id="gearBtn" aria-label="Redigera kategorier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.03Z"/></svg></button>
+  </div>
 </header>
 
 <nav class="tabs" role="tablist">
@@ -787,12 +792,35 @@ function openManual(){
   $('manualOverlay').classList.add('open');
 }
 function closeManual(){ $('manualOverlay').classList.remove('open'); }
+/* Manuell tid gör anspråk på sin slot: överlappande poster trimmas,
+   delas eller tas bort så att ingen tid räknas dubbelt */
+function carveOut(start, end){
+  const now = Date.now();
+  state.entries = state.entries.flatMap(e=>{
+    const eEnd = e.end===null ? now : e.end;
+    if(eEnd <= start || e.start >= end) return [e];   // ingen överlapp
+    const parts = [];
+    if(e.start < start){
+      parts.push({id:e.id, cat:e.cat, start:e.start, end:start});   // delen före behålls
+    }
+    if(eEnd > end){
+      parts.push({id:uid(), cat:e.cat, start:end, end:e.end});      // delen efter behålls (null = fortsätter rulla)
+    }
+    return parts;
+  });
+  // Om en pågående aktivitet påverkades: rensa ev. pomodoro-koppling
+  if(state.pomo && !state.entries.find(e=>e.id===state.pomo.entryId)){
+    state.pomo = null;
+  }
+}
+
 function saveManual(){
   const date = $('mDate').value, s = $('mStart').value, e = $('mEnd').value;
   if(!date || !s || !e){ $('mErr').textContent='Fyll i datum och tider.'; return; }
   const start = new Date(date+'T'+s).getTime();
   const end = new Date(date+'T'+e).getTime();
   if(end<=start){ $('mErr').textContent='Sluttiden måste vara efter starttiden.'; return; }
+  carveOut(start, end);
   state.entries.push({id:uid(), cat:$('mCat').value, start, end});
   saveState(); closeManual(); render();
 }
