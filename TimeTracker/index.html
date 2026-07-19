@@ -181,13 +181,6 @@
   .bar-track{height:10px;background:var(--card);border-radius:5px;overflow:hidden}
   .bar-fill{height:100%;border-radius:5px;transition:width .4s ease}
 
-  .split{margin:0 0 26px}
-  .split-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--card)}
-  .split-seg{height:100%}
-  .split-legend{display:flex;gap:16px;margin-top:9px;flex-wrap:wrap}
-  .split-legend span{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
-  .split-legend b{color:var(--text);font-variant-numeric:tabular-nums}
-
   .days{display:flex;gap:8px;align-items:flex-end;height:120px;margin-bottom:6px}
   .day-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:0;height:100%}
   .day-stack{width:100%;display:flex;flex-direction:column-reverse;border-radius:6px;overflow:hidden}
@@ -223,7 +216,6 @@
   /* ---------- Category editor ---------- */
   .cat-edit-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
   .cat-edit-row input{flex:1;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:11px;font-size:14px;color:var(--text);font-family:inherit}
-  .cat-edit-row select{background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:11px 8px;font-size:13px;color:var(--dim);font-family:inherit}
 
   .footer{color:var(--faint);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:10px 0 4px}
 
@@ -292,12 +284,6 @@
 
   <div class="bars" id="weekBars"></div>
 
-  <div class="sect"><h2>Var hamnar din tid?</h2></div>
-  <div class="split">
-    <div class="split-bar" id="splitBar"></div>
-    <div class="split-legend" id="splitLegend"></div>
-  </div>
-
   <div class="sect"><h2>Per dag</h2></div>
   <div class="days" id="dayBars"></div>
   <div class="day-labels"><span>Mån</span><span>Tis</span><span>Ons</span><span>Tor</span><span>Fre</span><span>Lör</span><span>Sön</span></div>
@@ -351,25 +337,22 @@
    Tidsmätaren — Monkey Mindset
    Data model:
    state = {
-     categories: [{id, name, color, group}],   group: varde | reaktiv | ovrigt
+     categories: [{id, name, color}],
      entries: [{id, cat, start, end}],         end === null => running
    }
    ========================================================= */
 
 const COLORS = ['#FF6B35','#E8C547','#4ECDC4','#95E881','#FF6B6B','#B39DDB','#8A93A6'];
-const GROUPS = { varde:{name:'Värdeskapande',color:'#95E881'},
-                 reaktiv:{name:'Reaktiv',color:'#FF6B6B'},
-                 ovrigt:{name:'Övrigt',color:'#8A93A6'} };
 
 const DEFAULT_STATE = {
   categories: [
-    {id:'moten',    name:'Möten',                 color:'#FF6B35', group:'ovrigt'},
-    {id:'mejl',     name:'Mejl & admin',          color:'#E8C547', group:'reaktiv'},
-    {id:'fokus',    name:'Eget arbete (fokus)',   color:'#4ECDC4', group:'varde'},
-    {id:'samtal',   name:'Medarbetarsamtal / 1:1',color:'#95E881', group:'varde'},
-    {id:'brand',    name:'Brandsläckning',        color:'#FF6B6B', group:'reaktiv'},
-    {id:'strategi', name:'Strategi & reflektion', color:'#B39DDB', group:'varde'},
-    {id:'paus',     name:'Paus',                  color:'#8A93A6', group:'ovrigt'}
+    {id:'moten',    name:'Möten',                 color:'#FF6B35'},
+    {id:'mejl',     name:'Mejl & admin',          color:'#E8C547'},
+    {id:'fokus',    name:'Eget arbete (fokus)',   color:'#4ECDC4'},
+    {id:'samtal',   name:'Medarbetarsamtal / 1:1',color:'#95E881'},
+    {id:'brand',    name:'Brandsläckning',        color:'#FF6B6B'},
+    {id:'strategi', name:'Strategi & reflektion', color:'#B39DDB'},
+    {id:'paus',     name:'Paus',                  color:'#8A93A6'}
   ],
   entries: []
 };
@@ -746,32 +729,6 @@ function renderVecka(){
     bars.innerHTML = '<div class="empty">Ingen tid loggad den här veckan.</div>';
   }
 
-  // Värdeskapande / Reaktiv / Övrigt
-  const groupTotals = {varde:0, reaktiv:0, ovrigt:0};
-  entries.forEach(e=>{
-    const c = catById(e.cat);
-    const g = c && groupTotals.hasOwnProperty(c.group) ? c.group : 'ovrigt';
-    groupTotals[g] += entryDur(e);
-  });
-  const splitBar = $('splitBar');
-  const splitLegend = $('splitLegend');
-  splitBar.innerHTML = ''; splitLegend.innerHTML = '';
-  Object.keys(GROUPS).forEach(g=>{
-    const v = groupTotals[g];
-    const pct = grand ? v/grand*100 : 0;
-    if(pct>0){
-      const seg = document.createElement('div');
-      seg.className='split-seg';
-      seg.style.width = pct+'%';
-      seg.style.background = GROUPS[g].color;
-      splitBar.appendChild(seg);
-    }
-    const leg = document.createElement('span');
-    leg.innerHTML = '<span class="dot" style="background:'+GROUPS[g].color+'"></span>' +
-      GROUPS[g].name + ' <b>' + Math.round(pct) + '%</b>';
-    splitLegend.appendChild(leg);
-  });
-
   // Per dag (staplade)
   const dayEl = $('dayBars');
   dayEl.innerHTML = '';
@@ -852,21 +809,14 @@ function openEditor(){
     dot.className='dot'; dot.style.background=c.color;
     const inp = document.createElement('input');
     inp.value = c.name; inp.maxLength = 32;
-    const sel = document.createElement('select');
-    Object.keys(GROUPS).forEach(g=>{
-      const o=document.createElement('option');
-      o.value=g; o.textContent=GROUPS[g].name;
-      if(c.group===g) o.selected=true;
-      sel.appendChild(o);
-    });
-    row.append(dot, inp, sel);
+    row.append(dot, inp);
     box.appendChild(row);
   });
   $('editOverlay').classList.add('open');
 }
 function addCategory(){
   const color = COLORS[state.categories.length % COLORS.length];
-  state.categories.push({id:uid(), name:'Ny kategori', color, group:'ovrigt'});
+  state.categories.push({id:uid(), name:'Ny kategori', color});
   openEditor();
 }
 function saveCategories(){
@@ -875,7 +825,6 @@ function saveCategories(){
     if(c){
       const name = row.querySelector('input').value.trim();
       if(name) c.name = name;
-      c.group = row.querySelector('select').value;
     }
   });
   $('editOverlay').classList.remove('open');
@@ -886,7 +835,7 @@ function saveCategories(){
 const WEEKDAYS = ['Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag','Söndag'];
 
 function buildCsv(entries){
-  const rows = [['Datum','Veckodag','Kategori','Grupp','Start','Slut','Minuter']];
+  const rows = [['Datum','Veckodag','Kategori','Start','Slut','Minuter']];
   entries
     .filter(e=>e.end!==null)
     .sort((a,b)=>a.start-b.start)
@@ -897,7 +846,6 @@ function buildCsv(entries){
         dayKey(e.start),
         WEEKDAYS[(d.getDay()+6)%7],
         c ? c.name : 'Borttagen kategori',
-        c ? GROUPS[c.group].name : 'Övrigt',
         fmtClock(e.start),
         fmtClock(e.end),
         Math.round(entryDur(e)/60000)
