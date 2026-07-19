@@ -210,7 +210,13 @@
 
   /* ---------- Category editor ---------- */
   .cat-edit-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-  .cat-edit-row input{flex:1;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:11px;font-size:14px;color:var(--text);font-family:inherit}
+  .cat-edit-row input{flex:1;min-width:0;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:11px;font-size:14px;color:var(--text);font-family:inherit}
+  .cat-edit-row .mv{
+    color:var(--dim);background:var(--card-2);border-radius:8px;
+    padding:10px 9px;flex-shrink:0;
+  }
+  .cat-edit-row .mv:hover{color:var(--text)}
+  .cat-edit-row .mv:active{background:#2B3040}
 
   .footer{color:var(--faint);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:10px 0 4px}
 
@@ -340,24 +346,29 @@
    }
    ========================================================= */
 
-const COLORS = ['#FF6B35','#E8C547','#4ECDC4','#95E881','#FF6B6B','#B39DDB','#8A93A6'];
+const COLORS = [
+  '#FF6B35','#E8C547','#4ECDC4','#95E881','#FF6B6B','#B39DDB','#8A93A6',
+  '#5B9BFF','#F06FA8','#C7E85A','#7B7FEA','#D96FE0','#E8A87C','#62B6CB'
+];
 
 const DEFAULT_STATE = {
   categories: [
-    {id:'moten',    name:'Möten',                 color:'#FF6B35'},
-    {id:'mejl',     name:'Mejl & admin',          color:'#E8C547'},
-    {id:'fokus',    name:'Eget arbete (fokus)',   color:'#4ECDC4'},
-    {id:'samtal',   name:'Medarbetarsamtal / 1:1',color:'#95E881'},
-    {id:'brand',    name:'Brandsläckning',        color:'#FF6B6B'},
-    {id:'strategi', name:'Strategi & reflektion', color:'#B39DDB'},
-    {id:'paus',     name:'Paus',                  color:'#8A93A6'}
+    {id:'moten',  name:'Möten',          color:'#FF6B35'},
+    {id:'samtal', name:'1:1 & samtal',   color:'#95E881'},
+    {id:'mail',   name:'Mail',           color:'#E8C547'},
+    {id:'admin',  name:'Admin',          color:'#B39DDB'},
+    {id:'fokus',  name:'Fokustid',       color:'#4ECDC4'},
+    {id:'brand',  name:'Brandsläckning', color:'#FF6B6B'},
+    {id:'paus',   name:'Paus',           color:'#8A93A6'}
   ],
   entries: []
 };
 
 /* Ritade ikoner i appens stil — renderas lika på alla enheter */
 const ICONS = {
-  x:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+  x:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  up:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>',
+  down:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>'
 };
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -712,24 +723,65 @@ function openEditor(){
     dot.className='dot'; dot.style.background=c.color;
     const inp = document.createElement('input');
     inp.value = c.name; inp.maxLength = 32;
-    row.append(dot, inp);
+    const up = document.createElement('button');
+    up.className='mv'; up.innerHTML=ICONS.up;
+    up.setAttribute('aria-label','Flytta upp');
+    up.onclick = ()=>moveRow(row,-1);
+    const down = document.createElement('button');
+    down.className='mv'; down.innerHTML=ICONS.down;
+    down.setAttribute('aria-label','Flytta ner');
+    down.onclick = ()=>moveRow(row,1);
+    row.append(dot, inp, up, down);
     box.appendChild(row);
   });
   $('editOverlay').classList.add('open');
 }
+function moveRow(row, dir){
+  // Flyttar bara raden i listan — ordningen sparas först vid "Klart",
+  // så påbörjade namnändringar i andra fält behålls
+  if(dir<0 && row.previousElementSibling){
+    row.parentNode.insertBefore(row, row.previousElementSibling);
+  }else if(dir>0 && row.nextElementSibling){
+    row.parentNode.insertBefore(row.nextElementSibling, row);
+  }
+}
+function nextColor(){
+  // Första lediga färgen i paletten — annars generera en ny distinkt nyans
+  const used = new Set(state.categories.map(c=>c.color));
+  const free = COLORS.find(c=>!used.has(c));
+  if(free) return free;
+  let hue = (state.categories.length * 137.508) % 360;   // gyllene vinkeln sprider nyanserna
+  let color = hslToHex(hue, 62, 62);
+  let guard = 0;
+  while(used.has(color) && guard++ < 40){
+    hue = (hue + 137.508) % 360;
+    color = hslToHex(hue, 62, 62);
+  }
+  return color;
+}
+function hslToHex(h, s, l){
+  s/=100; l/=100;
+  const k = n => (n + h/30) % 12;
+  const a = s * Math.min(l, 1-l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n), 1)));
+  const to = x => Math.round(255*x).toString(16).padStart(2,'0');
+  return '#'+to(f(0))+to(f(8))+to(f(4));
+}
 function addCategory(){
-  const color = COLORS[state.categories.length % COLORS.length];
-  state.categories.push({id:uid(), name:'Ny kategori', color});
+  state.categories.push({id:uid(), name:'Ny kategori', color: nextColor()});
   openEditor();
 }
 function saveCategories(){
+  const ordered = [];
   document.querySelectorAll('#catEditor .cat-edit-row').forEach(row=>{
     const c = catById(row.dataset.id);
     if(c){
       const name = row.querySelector('input').value.trim();
       if(name) c.name = name;
+      ordered.push(c);
     }
   });
+  if(ordered.length === state.categories.length) state.categories = ordered;
   $('editOverlay').classList.remove('open');
   saveState(); render();
 }
