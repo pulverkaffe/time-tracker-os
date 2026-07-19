@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Tidsmätaren — Monkey Mindset</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="theme-color" content="#12141A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141A;
+    --card:#1B1E26;
+    --card-2:#232733;
+    --text:#F2F3F5;
+    --dim:rgba(242,243,245,.55);
+    --faint:rgba(242,243,245,.28);
+    --line:rgba(242,243,245,.08);
+    --energi:#FF6B35;
+    --insikt:#E8C547;
+    --tillit:#4ECDC4;
+    --tillvaxt:#95E881;
+    --passion:#FF6B6B;
+    --lugn:#B39DDB;
+    --neutral:#8A93A6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Outfit',system-ui,-apple-system,sans-serif;
+    font-weight:400;
+    -webkit-font-smoothing:antialiased;
+    padding:0 16px calc(24px + env(safe-area-inset-bottom));
+    max-width:560px;
+    margin:0 auto;
+  }
+  button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--tillit);outline-offset:2px;border-radius:6px}
+
+  /* ---------- Header ---------- */
+  header{padding:22px 0 14px;display:flex;align-items:flex-end;justify-content:space-between}
+  .brand{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  h1{font-size:30px;font-weight:900;letter-spacing:-.01em;line-height:1.05;margin-top:4px}
+  .hd-actions{display:flex;gap:4px;align-items:center}
+  .gear{font-size:20px;color:var(--dim);padding:8px;line-height:1;display:block}
+  .gear svg{width:20px;height:20px;display:block}
+  .gear:hover{color:var(--text)}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:6px;background:var(--card);border-radius:12px;padding:4px;margin-bottom:18px}
+  .tabs button{flex:1;padding:10px;border-radius:9px;font-size:14px;font-weight:600;color:var(--dim);transition:background .15s,color .15s}
+  .tabs button[aria-selected="true"]{background:var(--card-2);color:var(--text)}
+
+  /* ---------- Export reminder ---------- */
+  .banner{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--card);border:1px solid rgba(78,205,196,.35);
+    border-radius:13px;padding:14px 16px;margin-bottom:16px;
+  }
+  .banner[hidden]{display:none}
+  .banner .b-text{font-size:14px;line-height:1.35}
+  .banner .b-text b{font-weight:700}
+  .banner .b-text small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  .banner button{
+    flex-shrink:0;font-size:13px;font-weight:700;color:#0E1116;
+    background:var(--tillit);border-radius:9px;padding:10px 14px;
+  }
+
+  /* ---------- Active card ---------- */
+  .active-card{
+    position:relative;
+    background:var(--card);
+    background:linear-gradient(140deg, color-mix(in srgb, var(--accent,var(--neutral)) 20%, var(--card)) 0%, var(--card) 72%);
+    border-radius:16px;
+    padding:26px 22px 24px 28px;
+    margin-bottom:26px;
+    overflow:hidden;
+    transition:background .3s;
+  }
+  .active-card::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:6px;
+    background:var(--accent,var(--neutral));
+    transition:background .2s;
+  }
+  .active-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:600;margin-bottom:6px}
+  .active-name{font-size:20px;font-weight:800}
+  .active-time{font-size:56px;font-weight:900;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums;margin:6px 0 10px}
+  .active-time.idle{color:var(--faint);font-weight:300}
+  .stop-btn{
+    font-size:14px;font-weight:700;color:var(--text);
+    background:var(--card-2);border:1px solid rgba(242,243,245,.25);
+    border-radius:9px;padding:10px 18px;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .stop-btn::before{
+    content:"";width:10px;height:10px;border-radius:2px;
+    background:currentColor;
+  }
+  .stop-btn:hover{background:#2B3040}
+  .idle-hint{font-size:14px;color:var(--dim)}
+
+  /* ---------- Category grid ---------- */
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px}
+  .cat-btn{
+    background:var(--card);
+    background:color-mix(in srgb, var(--c) 9%, var(--card));
+    border-radius:13px;
+    padding:14px 14px 12px;
+    text-align:left;
+    font-size:15px;
+    font-weight:600;
+    line-height:1.25;
+    transition:transform .1s, background .15s, box-shadow .15s;
+  }
+  .cat-btn .cat-dot{
+    display:inline-block;width:9px;height:9px;border-radius:50%;
+    background:var(--c);margin-right:8px;vertical-align:1px;
+  }
+  .cat-btn:hover{background:color-mix(in srgb, var(--c) 16%, var(--card))}
+  .cat-btn:active{transform:scale(.98)}
+  .cat-btn.running{
+    background:color-mix(in srgb, var(--c) 22%, var(--card));
+    box-shadow:inset 0 0 0 1px var(--c);
+  }
+  .cat-btn .today-sum{display:block;font-size:12px;font-weight:400;color:var(--dim);margin-top:5px;padding-left:17px;font-variant-numeric:tabular-nums}
+  .cat-btn.running .today-sum{color:var(--c)}
+
+  /* ---------- Section titles ---------- */
+  .sect{display:flex;align-items:baseline;justify-content:space-between;margin:0 2px 10px}
+  .sect h2{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  .sect button{font-size:13px;font-weight:600;color:var(--tillit)}
+
+  /* ---------- Icons ---------- */
+  .icn{width:15px;height:15px;vertical-align:-2px}
+  .gear svg{width:20px;height:20px;display:block}
+  .icn-x{width:13px;height:13px;display:block}
+
+  /* ---------- Log list ---------- */
+  .log{display:flex;flex-direction:column;gap:6px;margin-bottom:28px}
+  .log-row{
+    display:flex;align-items:center;gap:12px;
+    background:var(--card);border-radius:11px;padding:11px 14px;
+  }
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .log-name{font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .log-span{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .log-dur{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+  .log-del{color:var(--faint);font-size:16px;padding:4px 2px 4px 8px}
+  .log-del:hover{color:var(--passion)}
+  .empty{color:var(--faint);font-size:14px;padding:8px 2px 24px}
+
+  /* ---------- Week view ---------- */
+  .week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .week-nav .label{font-size:17px;font-weight:800}
+  .week-nav .sub{font-size:12px;color:var(--dim);font-weight:400;margin-top:2px}
+  .week-nav button{font-size:18px;color:var(--dim);padding:8px 12px;background:var(--card);border-radius:9px}
+  .week-nav button:disabled{opacity:.3;cursor:default}
+  .week-total{font-size:44px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:2px 0 2px}
+  .week-total small{font-size:15px;font-weight:400;color:var(--dim);letter-spacing:0}
+
+  .export-btn{
+    font-size:13px;font-weight:600;color:var(--tillit);
+    background:var(--card);border-radius:9px;padding:10px 14px;margin:10px 0 4px;
+  }
+  .export-btn:hover{background:var(--card-2)}
+
+  .bars{display:flex;flex-direction:column;gap:12px;margin:18px 0 26px}
+  .bar-row .bar-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+  .bar-row .bar-head .n{font-weight:600}
+  .bar-row .bar-head .v{color:var(--dim);font-variant-numeric:tabular-nums}
+  .bar-track{height:10px;background:var(--card);border-radius:5px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:5px;transition:width .4s ease}
+
+  .days{display:flex;gap:8px;align-items:flex-end;height:120px;margin-bottom:6px}
+  .day-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:0;height:100%}
+  .day-stack{width:100%;display:flex;flex-direction:column-reverse;border-radius:6px;overflow:hidden}
+  .day-seg{width:100%}
+  .day-labels{display:flex;gap:8px;margin-bottom:28px}
+  .day-labels span{flex:1;text-align:center;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(10,11,15,.7);
+    display:none;align-items:flex-end;justify-content:center;z-index:20;
+  }
+  .overlay.open{display:flex}
+  .sheet{
+    background:var(--card);width:100%;max-width:560px;
+    border-radius:18px 18px 0 0;padding:22px 20px calc(26px + env(safe-area-inset-bottom));
+  }
+  .sheet h3{font-size:18px;font-weight:800;margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600;margin-bottom:6px}
+  .field input,.field select{
+    width:100%;background:var(--card-2);border:1px solid var(--line);
+    border-radius:9px;padding:12px;font-size:15px;color:var(--text);font-family:inherit;
+    color-scheme:dark;
+  }
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .sheet-actions{display:flex;gap:10px;margin-top:8px}
+  .btn-primary{flex:1;background:var(--tillit);color:#0E1116;font-weight:800;font-size:15px;padding:13px;border-radius:10px}
+  .btn-ghost{flex:1;background:var(--card-2);font-weight:600;font-size:15px;padding:13px;border-radius:10px}
+  .form-err{color:var(--passion);font-size:13px;margin-top:4px;min-height:18px}
+
+  /* ---------- Category editor ---------- */
+  .cat-edit-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  .cat-edit-row input{flex:1;min-width:0;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:11px;font-size:14px;color:var(--text);font-family:inherit}
+  .cat-edit-row .mv{
+    color:var(--dim);background:var(--card-2);border-radius:8px;
+    padding:10px 9px;flex-shrink:0;
+  }
+  .cat-edit-row .mv:hover{color:var(--text)}
+  .cat-edit-row .mv:active{background:#2B3040}
+
+  .footer{color:var(--faint);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:10px 0 4px}
+
+  @media (max-width:380px){
+    .active-time{font-size:44px}
+    .cat-grid{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand">Monkey Mindset</div>
+    <h1>Tidsmätaren</h1>
+  </div>
+  <div class="hd-actions">
+    <a class="gear" href="hjalp.html" aria-label="Så funkar det"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.7 2.7 0 0 1 5.25.9c0 1.8-2.55 2.1-2.55 3.6"/><line x1="12" y1="16.8" x2="12" y2="16.9"/></svg></a>
+    <button class="gear" id="gearBtn" aria-label="Redigera kategorier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.03Z"/></svg></button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" id="tabLogga" aria-selected="true" onclick="setView('logga')">Logga</button>
+  <button role="tab" id="tabVecka" aria-selected="false" onclick="setView('vecka')">Vecka</button>
+</nav>
+
+<!-- ============ LOGGA ============ -->
+<main id="viewLogga">
+  <div class="banner" id="exportBanner" hidden>
+    <div class="b-text"><b>Förra veckan är klar</b><small id="bannerSub"></small></div>
+    <button onclick="exportLastWeek()">Exportera CSV</button>
+  </div>
+  <section class="active-card" id="activeCard">
+    <div class="active-label" id="activeLabel">Ingen aktivitet pågår</div>
+    <div class="active-time idle" id="activeTime">0:00</div>
+    <div class="idle-hint" id="activeHint">Tryck på det du gör just nu.</div>
+  </section>
+
+  <div class="cat-grid" id="catGrid"></div>
+
+  <div class="sect">
+    <h2>Idag</h2>
+    <span style="display:flex;gap:16px">
+      <button onclick="exportDay()">↓ CSV</button>
+      <button onclick="openManual()">+ Lägg till i efterhand</button>
+    </span>
+  </div>
+  <div class="log" id="todayLog"></div>
+  <div class="footer">monkeymindset.se</div>
+</main>
+
+<!-- ============ VECKA ============ -->
+<main id="viewVecka" hidden>
+  <div class="week-nav">
+    <button id="prevWeek" aria-label="Föregående vecka" onclick="moveWeek(-1)">‹</button>
+    <div style="text-align:center">
+      <div class="label" id="weekLabel"></div>
+      <div class="sub" id="weekSub"></div>
+    </div>
+    <button id="nextWeek" aria-label="Nästa vecka" onclick="moveWeek(1)">›</button>
+  </div>
+
+  <div class="week-total" id="weekTotal">0 <small>timmar loggade</small></div>
+  <button class="export-btn" onclick="exportWeek()">↓ Exportera veckan som CSV</button>
+
+  <div class="bars" id="weekBars"></div>
+
+  <div class="sect"><h2>Per dag</h2></div>
+  <div class="days" id="dayBars"></div>
+  <div class="day-labels"><span>Mån</span><span>Tis</span><span>Ons</span><span>Tor</span><span>Fre</span><span>Lör</span><span>Sön</span></div>
+  <div class="footer">monkeymindset.se</div>
+</main>
+
+<!-- ============ MANUELL INMATNING ============ -->
+<div class="overlay" id="manualOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+    <h3 id="manualTitle">Lägg till tid i efterhand</h3>
+    <div class="field">
+      <label for="mCat">Kategori</label>
+      <select id="mCat"></select>
+    </div>
+    <div class="field">
+      <label for="mDate">Datum</label>
+      <input type="date" id="mDate">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="mStart">Från</label>
+        <input type="time" id="mStart">
+      </div>
+      <div class="field">
+        <label for="mEnd">Till</label>
+        <input type="time" id="mEnd">
+      </div>
+    </div>
+    <div class="form-err" id="mErr"></div>
+    <div class="sheet-actions">
+      <button class="btn-ghost" onclick="closeManual()">Avbryt</button>
+      <button class="btn-primary" onclick="saveManual()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ KATEGORIREDIGERING ============ -->
+<div class="overlay" id="editOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <h3 id="editTitle">Redigera kategorier</h3>
+    <div id="catEditor"></div>
+    <button class="btn-ghost" style="width:100%;margin-bottom:10px" onclick="addCategory()">+ Ny kategori</button>
+    <div class="sheet-actions">
+      <button class="btn-primary" onclick="saveCategories()">Klart</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Tidsmätaren — Monkey Mindset
+   Data model:
+   state = {
+     categories: [{id, name, color}],
+     entries: [{id, cat, start, end}],         end === null => running
+   }
+   ========================================================= */
+
+const COLORS = [
+  '#FF6B35','#E8C547','#4ECDC4','#95E881','#FF6B6B','#B39DDB','#8A93A6',
+  '#5B9BFF','#F06FA8','#C7E85A','#7B7FEA','#D96FE0','#E8A87C','#62B6CB'
+];
+
+const DEFAULT_STATE = {
+  categories: [
+    {id:'moten',  name:'Möten',          color:'#FF6B35'},
+    {id:'samtal', name:'1:1 & samtal',   color:'#95E881'},
+    {id:'mail',   name:'Mail',           color:'#E8C547'},
+    {id:'admin',  name:'Admin',          color:'#B39DDB'},
+    {id:'fokus',  name:'Fokustid',       color:'#4ECDC4'},
+    {id:'brand',  name:'Brandsläckning', color:'#FF6B6B'},
+    {id:'paus',   name:'Paus',           color:'#8A93A6'}
+  ],
+  entries: []
+};
+
+/* Ritade ikoner i appens stil — renderas lika på alla enheter */
+const ICONS = {
+  x:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  up:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>',
+  down:'<svg class="icn-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>'
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+let weekOffset = 0;          // 0 = denna vecka, -1 = förra, ...
+let currentView = 'logga';
+let tickTimer = null;
+const STORAGE_KEY = 'tidsmataren-state';
+
+/* ---------- Persistence (best effort) ----------
+   Inuti Claude: window.storage. Fristående/hostad: localStorage. */
+async function loadState(){
+  let raw = null;
+  try{
+    if(window.storage){
+      const res = await window.storage.get(STORAGE_KEY);
+      if(res && res.value) raw = res.value;
+    }
+  }catch(e){ /* ingen sparad data ännu */ }
+  if(raw===null){
+    try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){}
+  }
+  if(raw){
+    try{
+      const parsed = JSON.parse(raw);
+      if(parsed && Array.isArray(parsed.categories) && Array.isArray(parsed.entries)){
+        state = parsed;
+      }
+    }catch(e){}
+  }
+}
+async function saveState(){
+  const raw = JSON.stringify(state);
+  let saved = false;
+  try{
+    if(window.storage){
+      await window.storage.set(STORAGE_KEY, raw);
+      saved = true;
+    }
+  }catch(e){}
+  if(!saved){
+    try{ localStorage.setItem(STORAGE_KEY, raw); }catch(e){ console.error('Kunde inte spara', e); }
+  }
+}
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const catById = id => state.categories.find(c=>c.id===id);
+const runningEntry = () => state.entries.find(e=>e.end===null);
+
+function fmtDur(ms){
+  const m = Math.floor(ms/60000);
+  const h = Math.floor(m/60);
+  return h + ':' + String(m%60).padStart(2,'0');
+}
+function fmtDurClock(ms){
+  // Minuter och sekunder; efter en timme h:mm:ss
+  const s = Math.floor(Math.max(0,ms)/1000);
+  const m = Math.floor(s/60);
+  const h = Math.floor(m/60);
+  if(h>0) return h + ':' + String(m%60).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+  return m + ':' + String(s%60).padStart(2,'0');
+}
+function fmtHours(ms){
+  const h = ms/3600000;
+  return (Math.round(h*10)/10).toString().replace('.',',');
+}
+function fmtClock(ts){
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function dayKey(ts){
+  const d = new Date(ts);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function weekStart(offset){
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const wd = (d.getDay()+6)%7;            // 0 = måndag
+  d.setDate(d.getDate() - wd + offset*7);
+  return d;
+}
+function entryDur(e){ return (e.end===null ? Date.now() : e.end) - e.start; }
+
+/* Glömd aktivitet: allt som rullar förbi midnatt stoppas 23:59 sin startdag */
+function closeForgotten(){
+  const run = runningEntry();
+  if(run && dayKey(run.start) !== dayKey(Date.now())){
+    const d = new Date(run.start);
+    run.end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59).getTime();
+    saveState(); render();
+    return true;
+  }
+  return false;
+}
+
+/* ---------- Views ---------- */
+function setView(v){
+  currentView = v;
+  $('viewLogga').hidden = v!=='logga';
+  $('viewVecka').hidden = v!=='vecka';
+  $('tabLogga').setAttribute('aria-selected', v==='logga');
+  $('tabVecka').setAttribute('aria-selected', v==='vecka');
+  render();
+}
+
+/* ---------- Tracking ---------- */
+function startActivity(catId){
+  const run = runningEntry();
+  if(run && run.cat===catId){ stopActivity(); return; }   // samma knapp = stopp
+  const now = Date.now();
+  if(run) run.end = now;
+  state.entries.push({id:uid(), cat:catId, start:now, end:null});
+  saveState(); render();
+}
+function stopActivity(){
+  const run = runningEntry();
+  if(run){ run.end = Date.now(); saveState(); render(); }
+}
+
+function deleteEntry(id){
+  state.entries = state.entries.filter(e=>e.id!==id);
+  saveState(); render();
+}
+
+/* ---------- Render: Logga ---------- */
+function renderLogga(){
+  updateBanner();
+  const run = runningEntry();
+  const card = $('activeCard');
+
+  if(run){
+    const c = catById(run.cat);
+    card.style.setProperty('--accent', c ? c.color : 'var(--neutral)');
+    $('activeLabel').textContent = 'Pågår nu';
+    $('activeTime').textContent = fmtDurClock(entryDur(run));
+    $('activeTime').classList.remove('idle');
+    $('activeHint').innerHTML = '';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'active-name';
+    nameEl.textContent = c ? c.name : '–';
+    nameEl.style.marginBottom = '12px';
+    const stopBtn = document.createElement('button');
+    stopBtn.className = 'stop-btn';
+    stopBtn.textContent = 'Stoppa';
+    stopBtn.onclick = stopActivity;
+    $('activeHint').append(nameEl, stopBtn);
+  }else{
+    card.style.setProperty('--accent','var(--neutral)');
+    $('activeLabel').textContent = 'Ingen aktivitet pågår';
+    $('activeTime').textContent = '0:00';
+    $('activeTime').classList.add('idle');
+    $('activeHint').textContent = 'Tryck på det du gör just nu.';
+  }
+
+  // Kategoriknappar med dagens summa
+  const todayTotals = {};
+  const tk = dayKey(Date.now());
+  state.entries.forEach(e=>{
+    if(dayKey(e.start)===tk){
+      todayTotals[e.cat] = (todayTotals[e.cat]||0) + entryDur(e);
+    }
+  });
+
+  const grid = $('catGrid');
+  grid.innerHTML = '';
+  state.categories.forEach(c=>{
+    const b = document.createElement('button');
+    b.className = 'cat-btn' + (run && run.cat===c.id ? ' running':'');
+    b.style.setProperty('--c', c.color);
+    b.setAttribute('aria-pressed', run && run.cat===c.id ? 'true':'false');
+    const sum = todayTotals[c.id];
+    b.innerHTML = '<span class="cat-dot"></span>' + escapeHtml(c.name) +
+      '<span class="today-sum">' + (sum ? fmtDurClock(sum)+' idag' : (run && run.cat===c.id ? 'pågår…' : '&nbsp;')) + '</span>';
+    b.onclick = ()=>startActivity(c.id);
+    grid.appendChild(b);
+  });
+
+  // Dagens logg
+  const log = $('todayLog');
+  log.innerHTML = '';
+  const todays = state.entries
+    .filter(e=>dayKey(e.start)===tk && e.end!==null)
+    .sort((a,b)=>b.start-a.start);
+  if(!todays.length){
+    log.innerHTML = '<div class="empty">Inget loggat ännu. Din vecka börjar med ett tryck.</div>';
+  }
+  todays.forEach(e=>{
+    const c = catById(e.cat);
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    row.innerHTML =
+      '<span class="dot" style="background:'+(c?c.color:'#666')+'"></span>' +
+      '<span class="log-name">'+escapeHtml(c?c.name:'Borttagen kategori')+'</span>' +
+      '<span class="log-span">'+fmtClock(e.start)+'–'+fmtClock(e.end)+'</span>' +
+      '<span class="log-dur">'+fmtDurClock(entryDur(e))+'</span>';
+    const del = document.createElement('button');
+    del.className = 'log-del';
+    del.setAttribute('aria-label','Ta bort');
+    del.innerHTML = ICONS.x;
+    del.onclick = ()=>deleteEntry(e.id);
+    row.appendChild(del);
+    log.appendChild(row);
+  });
+}
+
+/* ---------- Render: Vecka ---------- */
+function renderVecka(){
+  const start = weekStart(weekOffset);
+  const end = new Date(start); end.setDate(end.getDate()+7);
+  const endShow = new Date(start); endShow.setDate(endShow.getDate()+6);
+
+  const fmt = d => d.getDate() + ' ' + d.toLocaleDateString('sv-SE',{month:'short'}).replace('.','');
+  $('weekLabel').textContent = weekOffset===0 ? 'Denna vecka' : (weekOffset===-1 ? 'Förra veckan' : fmt(start)+' – '+fmt(endShow));
+  $('weekSub').textContent = weekOffset>=-1 ? fmt(start)+' – '+fmt(endShow) : '';
+  $('nextWeek').disabled = weekOffset>=0;
+
+  const entries = state.entries.filter(e=>{
+    return e.start >= start.getTime() && e.start < end.getTime();
+  });
+
+  // Totaler per kategori
+  const totals = {};
+  let grand = 0;
+  entries.forEach(e=>{
+    const d = entryDur(e);
+    totals[e.cat] = (totals[e.cat]||0)+d;
+    grand += d;
+  });
+
+  $('weekTotal').innerHTML = fmtHours(grand) + ' <small>timmar loggade</small>';
+
+  // Staplar per kategori
+  const bars = $('weekBars');
+  bars.innerHTML = '';
+  const max = Math.max(...Object.values(totals), 1);
+  state.categories
+    .slice()
+    .sort((a,b)=>(totals[b.id]||0)-(totals[a.id]||0))
+    .forEach(c=>{
+      const v = totals[c.id]||0;
+      if(!v) return;
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      const pct = grand ? Math.round(v/grand*100) : 0;
+      row.innerHTML =
+        '<div class="bar-head"><span class="n">'+escapeHtml(c.name)+'</span>' +
+        '<span class="v">'+fmtDur(v)+' · '+pct+'%</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:'+(v/max*100)+'%;background:'+c.color+'"></div></div>';
+      bars.appendChild(row);
+    });
+  if(!grand){
+    bars.innerHTML = '<div class="empty">Ingen tid loggad den här veckan.</div>';
+  }
+
+  // Per dag (staplade)
+  const dayEl = $('dayBars');
+  dayEl.innerHTML = '';
+  const perDay = [];
+  let dayMax = 1;
+  for(let i=0;i<7;i++){
+    const dStart = new Date(start); dStart.setDate(dStart.getDate()+i);
+    const key = dayKey(dStart.getTime());
+    const list = entries.filter(e=>dayKey(e.start)===key);
+    const byCat = {};
+    let sum=0;
+    list.forEach(e=>{ const d=entryDur(e); byCat[e.cat]=(byCat[e.cat]||0)+d; sum+=d; });
+    perDay.push({byCat, sum});
+    dayMax = Math.max(dayMax, sum);
+  }
+  perDay.forEach(d=>{
+    const col = document.createElement('div');
+    col.className='day-col';
+    const stack = document.createElement('div');
+    stack.className='day-stack';
+    stack.style.height = (d.sum/dayMax*100)+'%';
+    state.categories.forEach(c=>{
+      const v = d.byCat[c.id];
+      if(!v) return;
+      const seg = document.createElement('div');
+      seg.className='day-seg';
+      seg.style.height = (v/d.sum*100)+'%';
+      seg.style.background = c.color;
+      stack.appendChild(seg);
+    });
+    col.appendChild(stack);
+    dayEl.appendChild(col);
+  });
+}
+
+function moveWeek(dir){
+  weekOffset = Math.min(0, weekOffset+dir);
+  renderVecka();
+}
+
+/* ---------- Manuell inmatning ---------- */
+function openManual(){
+  const sel = $('mCat');
+  sel.innerHTML='';
+  state.categories.forEach(c=>{
+    const o = document.createElement('option');
+    o.value=c.id; o.textContent=c.name;
+    sel.appendChild(o);
+  });
+  const now = new Date();
+  $('mDate').value = dayKey(now.getTime());
+  const hh = String(now.getHours()).padStart(2,'0');
+  $('mStart').value = String(Math.max(0,now.getHours()-1)).padStart(2,'0')+':00';
+  $('mEnd').value = hh+':00';
+  $('mErr').textContent='';
+  $('manualOverlay').classList.add('open');
+}
+function closeManual(){ $('manualOverlay').classList.remove('open'); }
+/* Manuell tid gör anspråk på sin slot: överlappande poster trimmas,
+   delas eller tas bort så att ingen tid räknas dubbelt */
+function carveOut(start, end){
+  const now = Date.now();
+  state.entries = state.entries.flatMap(e=>{
+    const eEnd = e.end===null ? now : e.end;
+    if(eEnd <= start || e.start >= end) return [e];   // ingen överlapp
+    const parts = [];
+    if(e.start < start){
+      parts.push({id:e.id, cat:e.cat, start:e.start, end:start});   // delen före behålls
+    }
+    if(eEnd > end){
+      parts.push({id:uid(), cat:e.cat, start:end, end:e.end});      // delen efter behålls (null = fortsätter rulla)
+    }
+    return parts;
+  });
+}
+
+function saveManual(){
+  const date = $('mDate').value, s = $('mStart').value, e = $('mEnd').value;
+  if(!date || !s || !e){ $('mErr').textContent='Fyll i datum och tider.'; return; }
+  const start = new Date(date+'T'+s).getTime();
+  const end = new Date(date+'T'+e).getTime();
+  if(end<=start){ $('mErr').textContent='Sluttiden måste vara efter starttiden.'; return; }
+  carveOut(start, end);
+  state.entries.push({id:uid(), cat:$('mCat').value, start, end});
+  saveState(); closeManual(); render();
+}
+
+/* ---------- Kategoriredigering ---------- */
+function openEditor(){
+  const box = $('catEditor');
+  box.innerHTML='';
+  state.categories.forEach(c=>{
+    const row = document.createElement('div');
+    row.className='cat-edit-row';
+    row.dataset.id = c.id;
+    const dot = document.createElement('span');
+    dot.className='dot'; dot.style.background=c.color;
+    const inp = document.createElement('input');
+    inp.value = c.name; inp.maxLength = 32;
+    const up = document.createElement('button');
+    up.className='mv'; up.innerHTML=ICONS.up;
+    up.setAttribute('aria-label','Flytta upp');
+    up.onclick = ()=>moveRow(row,-1);
+    const down = document.createElement('button');
+    down.className='mv'; down.innerHTML=ICONS.down;
+    down.setAttribute('aria-label','Flytta ner');
+    down.onclick = ()=>moveRow(row,1);
+    row.append(dot, inp, up, down);
+    box.appendChild(row);
+  });
+  $('editOverlay').classList.add('open');
+}
+function moveRow(row, dir){
+  // Flyttar bara raden i listan — ordningen sparas först vid "Klart",
+  // så påbörjade namnändringar i andra fält behålls
+  if(dir<0 && row.previousElementSibling){
+    row.parentNode.insertBefore(row, row.previousElementSibling);
+  }else if(dir>0 && row.nextElementSibling){
+    row.parentNode.insertBefore(row.nextElementSibling, row);
+  }
+}
+function nextColor(){
+  // Första lediga färgen i paletten — annars generera en ny distinkt nyans
+  const used = new Set(state.categories.map(c=>c.color));
+  const free = COLORS.find(c=>!used.has(c));
+  if(free) return free;
+  let hue = (state.categories.length * 137.508) % 360;   // gyllene vinkeln sprider nyanserna
+  let color = hslToHex(hue, 62, 62);
+  let guard = 0;
+  while(used.has(color) && guard++ < 40){
+    hue = (hue + 137.508) % 360;
+    color = hslToHex(hue, 62, 62);
+  }
+  return color;
+}
+function hslToHex(h, s, l){
+  s/=100; l/=100;
+  const k = n => (n + h/30) % 12;
+  const a = s * Math.min(l, 1-l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n), 1)));
+  const to = x => Math.round(255*x).toString(16).padStart(2,'0');
+  return '#'+to(f(0))+to(f(8))+to(f(4));
+}
+function addCategory(){
+  state.categories.push({id:uid(), name:'Ny kategori', color: nextColor()});
+  openEditor();
+}
+function saveCategories(){
+  const ordered = [];
+  document.querySelectorAll('#catEditor .cat-edit-row').forEach(row=>{
+    const c = catById(row.dataset.id);
+    if(c){
+      const name = row.querySelector('input').value.trim();
+      if(name) c.name = name;
+      ordered.push(c);
+    }
+  });
+  if(ordered.length === state.categories.length) state.categories = ordered;
+  $('editOverlay').classList.remove('open');
+  saveState(); render();
+}
+
+/* ---------- CSV-export ---------- */
+const WEEKDAYS = ['Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag','Söndag'];
+
+function buildCsv(entries){
+  const rows = [['Datum','Veckodag','Kategori','Start','Slut','Minuter']];
+  entries
+    .filter(e=>e.end!==null)
+    .sort((a,b)=>a.start-b.start)
+    .forEach(e=>{
+      const c = catById(e.cat);
+      const d = new Date(e.start);
+      rows.push([
+        dayKey(e.start),
+        WEEKDAYS[(d.getDay()+6)%7],
+        c ? c.name : 'Borttagen kategori',
+        fmtClock(e.start),
+        fmtClock(e.end),
+        Math.round(entryDur(e)/60000)
+      ]);
+    });
+  return rows.map(r=>r.map(v=>{
+    v = String(v);
+    return /[;"\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  }).join(';')).join('\r\n');
+}
+
+function downloadCsv(csv, filename){
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function exportDay(){
+  const tk = dayKey(Date.now());
+  const entries = state.entries.filter(e=>dayKey(e.start)===tk);
+  if(!entries.some(e=>e.end!==null)){ alert('Inget att exportera ännu idag.'); return; }
+  downloadCsv(buildCsv(entries), 'tid-'+tk+'.csv');
+}
+
+function exportWeek(){
+  const start = weekStart(weekOffset);
+  const end = new Date(start); end.setDate(end.getDate()+7);
+  const entries = state.entries.filter(e=>e.start>=start.getTime() && e.start<end.getTime());
+  if(!entries.some(e=>e.end!==null)){ alert('Ingen tid loggad den här veckan.'); return; }
+  downloadCsv(buildCsv(entries), 'tid-vecka-'+dayKey(start.getTime())+'.csv');
+  markWeekExported(start);
+}
+
+/* ---------- Påminnelse: exportera förra veckan ---------- */
+function lastWeekInfo(){
+  const start = weekStart(-1);
+  const end = new Date(start); end.setDate(end.getDate()+7);
+  const entries = state.entries.filter(e=>e.start>=start.getTime() && e.start<end.getTime() && e.end!==null);
+  return {start, entries, key: dayKey(start.getTime())};
+}
+function markWeekExported(startDate){
+  if(!state.exportedWeeks) state.exportedWeeks = {};
+  state.exportedWeeks[dayKey(startDate.getTime())] = true;
+  saveState();
+  updateBanner();
+}
+function updateBanner(){
+  const info = lastWeekInfo();
+  const exported = state.exportedWeeks && state.exportedWeeks[info.key];
+  const show = info.entries.length > 0 && !exported;
+  $('exportBanner').hidden = !show;
+  if(show){
+    const total = info.entries.reduce((s,e)=>s+entryDur(e),0);
+    $('bannerSub').textContent = fmtHours(total)+' timmar loggade — spara filen till coachingsamtalet.';
+  }
+}
+function exportLastWeek(){
+  const info = lastWeekInfo();
+  if(!info.entries.length) return;
+  downloadCsv(buildCsv(info.entries), 'tid-vecka-'+info.key+'.csv');
+  markWeekExported(info.start);
+}
+
+/* ---------- Misc ---------- */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function render(){
+  if(currentView==='logga') renderLogga(); else renderVecka();
+}
+
+/* Klick utanför sheet stänger */
+['manualOverlay','editOverlay'].forEach(id=>{
+  $(id).addEventListener('click', ev=>{
+    if(ev.target.id===id) $(id).classList.remove('open');
+  });
+});
+$('gearBtn').onclick = openEditor;
+
+/* ---------- Init ---------- */
+(async function init(){
+  await loadState();
+  render();
+  closeForgotten();
+  setInterval(()=>{
+    if(closeForgotten()) return;
+    const run = runningEntry();
+    if(run && currentView==='logga'){
+      $('activeTime').textContent = fmtDurClock(entryDur(run));
+    }
+  }, 1000);
+  tickTimer = setInterval(()=>{
+    if(currentView==='logga' && runningEntry()) renderLogga();
+  }, 60000);
+})();
+</script>
+</body>
+</html>
